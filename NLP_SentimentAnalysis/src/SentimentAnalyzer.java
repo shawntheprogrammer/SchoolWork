@@ -1,0 +1,52 @@
+import java.util.Properties;
+
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.neural.rnn.RNNCoreAnnotations;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.util.CoreMap;
+
+public class SentimentAnalyzer {
+	
+	private static SentimentAnalyzer instance = null;
+	protected SentimentAnalyzer() {
+	      // Exists only to defeat instantiation.
+	}
+	   
+	public static SentimentAnalyzer getInstance() {
+	      if(instance == null) {
+	         instance = new SentimentAnalyzer();
+	      }
+	      return instance;
+	}
+	   
+    public static double findSentiment(String tweet) {
+
+    	Properties props = new Properties();
+        props.setProperty("annotators", "tokenize, ssplit, parse, sentiment");
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+        
+        double mainSentiment = 0;
+        
+        if (tweet != null && tweet.length() > 0) {
+            int longest = 0;
+            //Annotation annotation = pipeline.process(tweet);
+            Annotation annotation = new Annotation(tweet.toLowerCase());
+            pipeline.annotate(annotation);
+            
+            for (CoreMap sentence : annotation.get(CoreAnnotations.SentencesAnnotation.class)) {
+                Tree tree = sentence.get(SentimentCoreAnnotations.AnnotatedTree.class);
+                double sentiment = RNNCoreAnnotations.getPredictedClass(tree);
+                String partText = sentence.toString();
+                if (partText.length() > longest) {
+                    mainSentiment = sentiment;
+                }
+
+            }
+        }
+        
+        return mainSentiment;
+    }
+}
